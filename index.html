@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votómetro 2026: Resultados Detallados</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #FFF0F5;
+            --primary: #FFB7C5; 
+            --primary-dark: #FF9EAA;
+            --accent: #6c5ce7; 
+            --text: #2d3436;
+            --card: #ffffff;
+            --info-bg: #E3F2FD;
+            --info-border: #2196F3;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(#dfe6e9 1.5px, transparent 1.5px);
+            background-size: 25px 25px;
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        #app {
+            background: var(--card);
+            width: 100%;
+            max-width: 900px;
+            border-radius: 40px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(108, 92, 231, 0.15);
+            border: 8px solid white;
+        }
+
+        h1 { color: var(--accent); text-align: center; font-weight: 900; font-size: 2.5em; margin: 0; }
+        .subtitle { text-align: center; color: #636e72; font-size: 1.1em; margin-bottom: 20px; }
+
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--primary-dark);
+            font-weight: 800;
+            display: block;
+            margin: 20px auto;
+            transition: 0.2s;
+        }
+        .btn-main:active { transform: translateY(6px); box-shadow: none; }
+        
+        .btn-pdf {
+            background: #2d3436; color: white; border: none; padding: 12px 30px;
+            font-size: 1em; border-radius: 50px; cursor: pointer; font-weight: 700;
+            display: block; margin: 10px auto;
+        }
+
+        /* README BOX */
+        .readme-container {
+            text-align: left; background: #F8F9FA; border: 2px solid #E9ECEF;
+            border-radius: 20px; padding: 20px; margin: 20px 0; font-size: 0.95em;
+        }
+        .readme-title {
+            color: var(--accent); font-weight: 800; margin-bottom: 10px; display: block;
+            font-size: 1.1em; border-bottom: 2px solid #eee; padding-bottom: 5px;
+        }
+        .readme-list { padding-left: 20px; margin: 10px 0; }
+        .readme-list li { margin-bottom: 12px; line-height: 1.4; }
+
+        /* Preguntas */
+        .option-btn {
+            background: white; border: 2px solid #dfe6e9; border-radius: 20px;
+            padding: 15px 20px; width: 100%; margin-bottom: 12px; text-align: left;
+            cursor: pointer; transition: all 0.2s; font-size: 1em; color: var(--text);
+            font-weight: 600; line-height: 1.4; display: flex; align-items: center;
+        }
+        .option-btn:hover {
+            border-color: var(--accent); background: #f8faff; transform: translateX(5px);
+        }
+        .opt-icon { margin-right: 15px; font-size: 1.2em; min-width: 30px; text-align: center; }
+
+        /* Resultados */
+        .candidate-card {
+            border: 2px solid #f1f2f6; border-radius: 25px; padding: 25px;
+            margin-bottom: 25px; background: #fff; position: relative;
+        }
+
+        .match-badge {
+            position: absolute; top: -15px; right: 20px; background: var(--accent);
+            color: white; padding: 8px 15px; border-radius: 20px; font-weight: 800;
+        }
+
+        .section-title { font-size: 0.8em; text-transform: uppercase; font-weight: 800; margin-top: 15px; }
+        .box-trayectoria { background: #FFFDE7; border-left: 5px solid #FBC02D; padding: 12px; border-radius: 10px; font-size: 0.95em; color: #5D4037; }
+        .box-promesa { background: #E8F5E9; border-left: 5px solid #4CAF50; padding: 12px; border-radius: 10px; font-size: 0.95em; color: #1B5E20; }
+
+        /* Breakdown Box (Nuevo) */
+        .breakdown-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; border-bottom: 1px solid #eee; font-size: 0.95em;
+        }
+        .breakdown-count {
+            background: #2d3436; color: white; padding: 2px 10px;
+            border-radius: 10px; font-weight: bold; font-size: 0.9em;
+        }
+
+        /* Gráfico */
+        #chart {
+            position: relative; height: 450px; width: 100%;
+            border: 3px dashed #b2bec3; border-radius: 30px; margin: 30px 0;
+            background: rgba(255,255,255,0.7);
+        }
+        .dot {
+            position: absolute; width: 20px; height: 20px; border-radius: 50%;
+            transform: translate(-50%, -50%); z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .label {
+            position: absolute; background: rgba(45, 52, 54, 0.9); color: white;
+            padding: 4px 8px; border-radius: 5px; font-size: 11px;
+            top: -35px; left: 50%; transform: translateX(-50%);
+            white-space: nowrap; opacity: 0; transition: 0.2s;
+            pointer-events: none; z-index: 100;
+        }
+        .dot:hover .label { opacity: 1; }
+        .printing-mode .label { opacity: 1 !important; background: rgba(45, 52, 54, 1) !important; border: 1px solid white; }
+        .user-dot { width: 30px; height: 30px; background: #FF007F; border: 4px solid white; box-shadow: 0 0 20px rgba(255, 0, 127, 0.4); z-index: 50; }
+
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="screen-start">
+        <h1>Votómetro 2026 🇨🇴</h1>
+        <div class="subtitle">Descubre tu afinidad real con los candidatos.</div>
+        
+        <div class="readme-container">
+            <span class="readme-title">🤖 Transparencia e IA</span>
+            <p>Este aplicativo usa Inteligencia Artificial para garantizar imparcialidad:</p>
+            <p><strong>No almacenamos datos personales ni registramos tus respuestas.</strong></p>
+            <p><strong>No intentamos influir en tu intención de voto. Los resultados se calculan automáticamente a partir de tus respuestas.</strong></p>
+            <span class="readme-title">✨ Características</span>
+            <ul class="readme-list">
+                <li><strong>Preguntas neutrales:</strong> Las preguntas y sus matices (4 opciones) fueron redactadas por IA para evitar sesgos personales.</li>
+                <li><strong>Cálculo matemático (Promedio):</strong> Tu ubicación en el mapa es un <strong>promedio matemático</strong> de tus 15 respuestas. 
+                    <br><em style="color:#666; font-size:0.9em;">(Ojo: Si respondes la mitad como extrema izquierda y la otra mitad como extrema derecha, el sistema te ubicará en el Centro, porque los extremos se anulan matemáticamente).</em></li>
+                <li><strong>Ubicación en el Espectro:</strong> La posición (X,Y) de los candidatos en el gráfico se determinó mediante análisis de datos públicos (votos en el congreso y planes de gobierno) procesados por IA.</li>
+            </ul>
+        </div>
+        
+        <button class="btn-main" onclick="start()">Comenzar Test</button>
+    </div>
+
+    <div id="screen-quiz" class="hidden">
+        <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--accent); margin-bottom:10px;">
+            <span id="q-progress">Pregunta 1/15</span>
+            <span>2026</span>
+        </div>
+        
+        <div id="q-box" class="fade-in">
+            <h2 id="q-text" style="color:#2d3436; margin-top:0; font-size:1.4em;">...</h2>
+            <div id="options-box"></div>
+        </div>
+    </div>
+
+    <div id="screen-results" class="hidden">
+        <div id="printable-area" style="padding:20px; background:white; border-radius:20px;">
+            <h1 style="color:var(--accent);">Mis Resultados 2026</h1>
+            <p style="text-align:center; color:#888;">Generado por Votómetro IA</p>
+
+            <div id="chart" style="position:relative;">
+  <!-- ejes -->
+  <div style="position:absolute; top:50%; left:0; width:100%; height:2px; background:#dfe6e9;"></div>
+  <div style="position:absolute; left:50%; top:0; height:100%; width:2px; background:#dfe6e9;"></div>
+
+  <!-- X axis labels (izq/der) -->
+  <span class="axis-label"
+        style="position:absolute; left:12px; top:50%; transform:translateY(-50%) rotate(-90deg); transform-origin:left top;">
+    Izquierda / Estado
+  </span>
+
+  <span class="axis-label"
+        style="position:absolute; right:12px; top:50%; transform:translateY(-50%) rotate(90deg); transform-origin:right top;">
+    Derecha / Mercado
+  </span>
+
+  <!-- Y axis labels (arriba/abajo) -->
+  <span class="axis-label"
+        style="position:absolute; top:10px; left:50%; transform:translateX(-50%); color:#6c5ce7;">
+    ⬆️ Progresista
+  </span>
+
+  <span class="axis-label"
+        style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); color:#6c5ce7;">
+    ⬇️ Conservador
+  </span>
+
+  <div id="dots-layer"></div>
+</div>
+
+
+            <div style="background:#f8f9fa; border-radius:20px; padding:20px; margin-bottom:30px; border:2px solid #eee;">
+                <h3 style="margin-top:0;">🔍 Desglose: ¿Quién ganó tu voto en cada pregunta?</h3>
+                <p style="font-size:0.9em; color:#666; margin-bottom:15px;">
+                    Aunque el gráfico muestra tu promedio general, aquí te mostramos <strong>en cuántas preguntas específicas coincidiste exactamente</strong> con la postura de cada candidato:
+                </p>
+                <div id="breakdown-box"></div>
+            </div>
+
+            <h3>🏆 Top 3 Afinidades (Promedio General)</h3>
+            <div id="matches-box"></div>
+        </div>
+        <h3 style="margin-top:30px;">🎯 Candidatos con coincidencias (pregunta a pregunta)</h3>
+        <p style="font-size:0.9em; color:#666; margin-top:-10px;">
+            Aquí se muestran solo los candidatos con los que coincidiste en al menos 1 pregunta (la coincidencia se calcula por cercanía de tu respuesta).
+        </p>
+        <div id="coincidences-box"></div>
+
+
+        <div style="margin-top:30px; text-align:center;">
+            <button class="btn-pdf" onclick="generatePDF()">📄 Descargar Resultados (PDF)</button>
+            <button class="btn-main" onclick="location.reload()" style="background:transparent; color:#666; box-shadow:none; border:2px solid #eee;">Reiniciar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ================= DATA CANDIDATOS =================
+    const candidates = [
+        { name: "Abelardo de la Espriella", party: "Derecha Radical", color: "#2d3436", x: 95, y: 5, trayectoria: "Realidad: Abogado litigante. Nunca ha tenido cargos públicos. Defiende la reducción extrema del Estado.", promesas: "Propone: Cerrar 13 ministerios, despedir a miles de funcionarios y eliminar impuestos." },
+        { name: "Iván Cepeda", party: "Pacto Histórico", color: "#f1c40f", x: 5, y: 95, trayectoria: "Realidad: Autor de la Ley de Víctimas y defensor de los Acuerdos de Paz. coautor de la iniciativa legislativa en pro del Matrimonio igualitario y reconocimiento de familias diversas.", promesas: "Propone: Reforma agraria (entregar tierras), Asamblea Constituyente y Paz Total." },
+        { name: "Paloma Valencia", party: "Centro Democrático", color: "#2d3436", x: 85, y: 15, trayectoria: "Realidad: Senadora de oposición. Votó en contra del Acuerdo de Escazú. Autora de leyes para el agro (Panela) y Estado Contigo (: programa de subsidios y acompañamiento para mujeres cabeza de hogar)", promesas: "Propone: Seguridad Democrática 2.0, bonos para colegios privados y libertad económica." },
+        { name: "Vicky Dávila", party: "Independiente", color: "#0984e3", x: 80, y: 25, trayectoria: "Realidad: Periodista. Se ha dedicado a denunciar escándalos de corrupción del gobierno actual.", promesas: "Propone: Un bloque de búsqueda contra corruptos y fortalecer la alianza con EE.UU." },
+        { name: "Gustavo Bolívar", party: "Pacto Histórico", color: "#e74c3c", x: 10, y: 90, trayectoria: "Realidad: Exsenador. Promovió la legalización del cannabis y subsidios al agua.", promesas: "Propone: Educación universitaria gratuita para todos y profundizar las reformas sociales." },
+        { name: "Claudia López", party: "Verde / Centro", color: "#00b894", x: 40, y: 70, trayectoria: "Realidad: Exalcaldesa de Bogotá. Construyó el Sistema de Cuidado y contrató el Metro.", promesas: "Propone: Enfocarse en 'hacer y no hablar', seguridad local y obras públicas." },
+        { name: "Sergio Fajardo", party: "Centro", color: "#00cec9", x: 50, y: 60, trayectoria: "Realidad: Exgobernador enfocado en educación y parques biblioteca. Gestión técnica.", promesas: "Propone: Lucha contra la corrupción sin polarización y la educación como motor." },
+        { name: "Juan Daniel Oviedo", party: "Independiente", color: "#e17055", x: 60, y: 65, trayectoria: "Realidad: Exdirector del DANE. Se destacó por su manejo técnico de las estadísticas.", promesas: "Propone: Gobernar con datos reales, sin ideologías extremas y gerencia eficiente." }
+    ];
+
+    // ================= PREGUNTAS DESCRIPTIVAS =================
+    const questions = [
+        { 
+            t: "1. ¿Cómo se debe solucionar el problema de la inseguridad?", 
+            o: [
+                { tx: "🔨 Mano dura total: Construir megacárceles, militarizar las ciudades y cero beneficios a criminales.", x:95, y:5 },
+                { tx: "👮 Autoridad y Tecnología: Fortalecer a la policía y usar inteligencia, sin llegar a extremos autoritarios.", x:75, y:30 },
+                { tx: "⚖️ Justicia Social: El crimen baja si hay justicia eficaz y más oportunidades de empleo.", x:50, y:60 },
+                { tx: "🕊️ Paz Total: La prioridad es negociar con las bandas criminales para que se desmovilicen pacíficamente.", x:5, y:95 }
+            ] 
+        },
+        { 
+            t: "2. ¿Qué tanto debe intervenir el Estado en la economía?", 
+            o: [
+                { tx: "🚫 Estado Mínimo: El Estado estorba. Hay que eliminar ministerios y dejar que el mercado libre decida todo.", x:100, y:null },
+                { tx: "💼 Facilitador: El Estado debe ser pequeño y ayudar a que los empresarios generen empleo.", x:70, y:null },
+                { tx: "⚖️ Regulador: Se necesita un Estado que vigile a las empresas para evitar abusos, economía mixta.", x:40, y:null },
+                { tx: "🏛️ Estado Fuerte: El Estado debe planificar la economía y garantizar los derechos de todos por encima del mercado.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "3. ¿Qué hacemos con las EPS y el sistema de salud?", 
+            o: [
+                { tx: "🏥 Defenderlas: El sistema actual funciona bien y el sector privado es más eficiente que el público.", x:90, y:null },
+                { tx: "🔧 Ajustarlas: Mantener las EPS pero vigilarlas más estrictamente para que no roben recursos.", x:60, y:null },
+                { tx: "🔄 Modelo Mixto: Que el Estado maneje la plata directamente, pero clínicas privadas presten el servicio.", x:30, y:null },
+                { tx: "🏛️ 100% Público: Eliminar las EPS. La salud es un derecho, no un negocio, y debe ser totalmente estatal.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "4. ¿Cuál es su postura frente a la explotación de petróleo y gas?", 
+            o: [
+                { tx: "🛢️ A favor de todo: Apoyo el Fracking y sacar todo el petróleo posible para generar riqueza.", x:95, y:null },
+                { tx: "💰 Pragmático: Seguir explorando petróleo de forma tradicional, pero sin hacer Fracking.", x:65, y:null },
+                { tx: "📉 Transición Gradual: No firmar nuevos contratos, pero respetar los que ya existen hasta que se acaben.", x:40, y:null },
+                { tx: "🛑 Prohibición: Hay que detener la exploración ya mismo para salvar el planeta del cambio climático.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "5. ¿Cree que Colombia necesita una Asamblea Constituyente?", 
+            o: [
+                { tx: "📜 Jamás: La Constitución del 91 es sagrada y debemos protegerla, no cambiarla.", x:null, y:30 },
+                { tx: "🤷 Innecesaria: Las reformas se pueden hacer a través del Congreso sin cambiar la Constitución.", x:null, y:50 },
+                { tx: "🤔 Tal vez: Solo para reformar cosas puntuales como la Justicia, pero no una reforma total.", x:null, y:70 },
+                { tx: "✊ Urgente: Las instituciones actuales no sirven, hay que refundar el país con una Constituyente.", x:null, y:95 }
+            ] 
+        },
+        { 
+            t: "6. ¿Cómo se debe manejar la pobreza y los subsidios?", 
+            o: [
+                { tx: "🚫 Cero regalado: Los subsidios generan pereza. La gente sale de pobre trabajando.", x:100, y:null },
+                { tx: "⚠️ Solo emergencias: Subsidios temporales solo para quienes sufren hambre o pobreza extrema.", x:70, y:null },
+                { tx: "💵 Renta Básica: Un ingreso garantizado para pobres, pero condicionado a que estudien o trabajen.", x:40, y:null },
+                { tx: "🤝 Universales: El Estado debe garantizar un sustento a todos los vulnerables como un derecho.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "7. ¿Cuál es la solución al problema de las drogas?", 
+            o: [
+                { tx: "🔫 Guerra total: Prohibición absoluta, fumigación aérea y cárcel para todos los involucrados.", x:null, y:10 },
+                { tx: "🛡️ Prevención: Mantener la prohibición, pero enfocarse en educar para que la gente no consuma.", x:null, y:40 },
+                { tx: "🌿 Regularización: Legalizar la marihuana recreativa y cobrar impuestos, como con el alcohol.", x:null, y:75 },
+                { tx: "🧪 Legalización total: El Estado debe regular todas las drogas para quitarle el negocio al narcotráfico.", x:null, y:95 }
+            ] 
+        },
+        { 
+            t: "8. ¿Cómo mejorar la educación en Colombia?", 
+            o: [
+                { tx: "🎟️ Bonos (Vouchers): Que el Estado le dé un cheque a los padres para que paguen el colegio privado que quieran.", x:95, y:null },
+                { tx: "🤝 Sistema Mixto: Apoyar a los colegios privados de calidad y mejorar los públicos.", x:65, y:null },
+                { tx: "🏫 Fortalecer lo Público: Todo el presupuesto debe ir a mejorar las universidades y colegios públicos.", x:30, y:null },
+                { tx: "🎓 Gratuidad Total: Educación pública, gratuita y universal para todos, financiada 100% por el Estado.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "9. ¿Cuál es su posición sobre el aborto?", 
+            o: [
+                { tx: "👶 Pro-Vida Radical: Debe estar totalmente prohibido, sin ninguna excepción.", x:null, y:5 },
+                { tx: "⚠️ Restringido: Solo permitirlo si la vida de la madre corre peligro o fue violación.", x:null, y:40 },
+                { tx: "⚖️ Causales: Mantener las reglas actuales (libre hasta la semana 24) pero promover la adopción.", x:null, y:60 },
+                { tx: "💚 Libre decisión: Es un derecho fundamental de la mujer decidir sobre su cuerpo sin restricciones.", x:null, y:95 }
+            ] 
+        },
+        { 
+            t: "10. ¿Qué opina de los impuestos?", 
+            o: [
+                { tx: "📉 Bajar impuestos ya: Eliminar impuestos a las empresas para que inviertan y generen empleo.", x:100, y:null },
+                { tx: "⚖️ Moderados: Reducir la carga tributaria pero perseguir fuertemente a los evasores.", x:70, y:null },
+                { tx: "📈 Progresivos: Que paguen más impuestos las personas naturales más ricas.", x:30, y:null },
+                { tx: "💰 Altos al Capital: Impuestos fuertes al patrimonio, herencias y ganancias de los bancos.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "11. ¿Qué relación debe tener la religión y la política?", 
+            o: [
+                { tx: "✝️ Estado Cristiano: Las leyes deben basarse en principios bíblicos y morales.", x:null, y:10 },
+                { tx: "👨‍👩‍👧‍👦 Tradicional: Defender la familia tradicional compuesta por hombre y mujer.", x:null, y:30 },
+                { tx: "🤝 Laico Respetuoso: Libertad de cultos, pero la religión no dicta las leyes.", x:null, y:70 },
+                { tx: "🏳️‍🌈 Laico Radical: Separación total. Garantizar derechos plenos a comunidades diversas y minorías.", x:null, y:95 }
+            ] 
+        },
+        { 
+            t: "12. ¿Cómo se debe manejar la protesta social?", 
+            o: [
+                { tx: "🚫 Cero Tolerancia: La policía debe despejar los bloqueos inmediatamente por la fuerza.", x:95, y:10 },
+                { tx: "🛡️ Orden: Se puede marchar, pero sin bloquear vías ni hacer vandalismo.", x:70, y:40 },
+                { tx: "🗣️ Diálogo: Antes de enviar al ESMAD, el gobierno debe sentarse a negociar.", x:40, y:70 },
+                { tx: "✊ Garantista: La protesta es un derecho sagrado. Hay que desmontar el ESMAD y escuchar al pueblo.", x:10, y:95 }
+            ] 
+        },
+        { 
+            t: "13. ¿Qué hacer con las tierras y el campo?", 
+            o: [
+                { tx: "🚜 Agroindustria: Respetar la propiedad privada y apoyar a los grandes empresarios del campo.", x:95, y:null },
+                { tx: "📈 Productividad: Poner impuestos altos a las tierras que no produzcan nada.", x:60, y:null },
+                { tx: "💰 Reforma Compra: Que el Estado compre tierras a precio comercial para dárselas a campesinos.", x:30, y:null },
+                { tx: "🌾 Revolución Agraria: Expropiar latifundios improductivos para repartirlos a quienes los trabajan.", x:5, y:null }
+            ] 
+        },
+        { 
+            t: "14. ¿Qué reforma necesita la justicia?", 
+            o: [
+                { tx: "⚖️ Una sola Corte: Unificar las altas cortes para evitar choques de trenes.", x:80, y:20 },
+                { tx: "🔒 Mano Dura: Aumentar las penas y quitar beneficios de casa por cárcel.", x:70, y:30 },
+                { tx: "🏛️ Independencia: Respetar la autonomía de los jueces y darles más recursos.", x:50, y:60 },
+                { tx: "🗳️ Elección Popular: Que los jueces y fiscales sean elegidos por voto popular.", x:10, y:90 }
+            ] 
+        },
+        { 
+            t: "15. ¿Cómo deben ser las relaciones laborales?", 
+            o: [
+                { tx: "⏱️ Flexibilidad total: Contratación por horas sin recargos para reducir el desempleo.", x:95, y:null },
+                { tx: "🤝 Acuerdos: Que trabajador y empresa pacten condiciones libremente.", x:70, y:null },
+                { tx: "🛡️ Protección: Mantener las primas, cesantías y recargos nocturnos actuales.", x:40, y:null },
+                { tx: "✊ Derechos Fuertes: Reducir la jornada laboral y aumentar el pago de horas extras.", x:5, y:null }
+            ] 
+        }
+    ];
+
+    let qIdx = 0, uX = 0, cX = 0, uY = 0, cY = 0;
+    // Array para guardar coordenadas de cada respuesta individual para el desglose
+    let userAnswers = [];
+
+    function start() { document.getElementById('screen-start').classList.add('hidden'); document.getElementById('screen-quiz').classList.remove('hidden'); showQ(); }
+
+    function showQ() {
+        if(qIdx >= questions.length) { results(); return; }
+        const q = questions[qIdx];
+        document.getElementById('q-progress').innerText = `Pregunta ${qIdx+1}/15`;
+        document.getElementById('q-text').innerText = q.t;
+        const box = document.getElementById('options-box'); box.innerHTML = '';
+        q.o.forEach(opt => {
+            const b = document.createElement('button'); b.className = 'option-btn'; 
+            b.innerHTML = `<span class="opt-icon">${opt.tx.split(':')[0]}</span><span style="display:block; font-size:0.9em; font-weight:400;">${opt.tx.split(':')[1] || ''}</span>`;
+            b.onclick = () => { 
+                // Acumular para promedio
+                if(opt.x!=null){uX+=opt.x;cX++} 
+                if(opt.y!=null){uY+=opt.y;cY++} 
+                // Guardar respuesta individual para el desglose
+                userAnswers.push({x: opt.x, y: opt.y});
+                qIdx++; 
+                showQ(); 
+            };
+            box.appendChild(b);
+        });
+    }
+
+    function results() {
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-results').classList.remove('hidden');
+        
+        // 1. Calcular Promedio General
+        const fX = cX?uX/cX:50, fY = cY?uY/cY:50;
+
+        // 2. Calcular Afinidad General (Distancia al promedio)
+        candidates.forEach(c => {
+            const dist = Math.sqrt(Math.pow(c.x - fX, 2) + Math.pow(c.y - fY, 2));
+            c.match = Math.max(0, 100 - (dist/1.4)).toFixed(0);
+        });
+        
+        // Ordenar por afinidad para el Top 3
+        const sortedForTop3 = [...candidates].sort((a,b) => b.match - a.match);
+
+        // 3. CALCULO DE COINCIDENCIAS EXACTAS (Punto a punto)
+        // Reiniciar contadores
+        candidates.forEach(c => c.exactMatches = 0);
+        
+        userAnswers.forEach(ans => {
+            // Si la respuesta tiene coordenadas nulas (ej: saltar pregunta), ignorar
+            if (ans.x === null && ans.y === null) return;
+            
+            // Buscar cuál candidato está más cerca de ESTA respuesta específica
+            let bestCandidate = null;
+            let minDistance = Infinity;
+            
+            candidates.forEach(c => {
+                // Usamos distancia euclidiana simple
+                // Si la pregunta solo tenia eje Y (ej: aborto), comparamos solo Y. Si solo X, solo X.
+                let dist = 0;
+                if (ans.x !== null && ans.y !== null) {
+                     dist = Math.sqrt(Math.pow(c.x - ans.x, 2) + Math.pow(c.y - ans.y, 2));
+                } else if (ans.x !== null) {
+                     dist = Math.abs(c.x - ans.x);
+                } else if (ans.y !== null) {
+                     dist = Math.abs(c.y - ans.y);
+                }
+                
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    bestCandidate = c;
+                }
+            });
+            
+            if (bestCandidate) {
+                bestCandidate.exactMatches++;
+            }
+        });
+
+        // Ordenar candidatos por número de coincidencias exactas para el desglose
+        const sortedForBreakdown = [...candidates].sort((a,b) => b.exactMatches - a.exactMatches);
+
+        // --- RENDERIZAR GRÁFICO ---
+        const layer = document.getElementById('dots-layer'); layer.innerHTML = '';
+        const u = document.createElement('div'); u.className = 'dot user-dot';
+        u.style.left = fX+'%'; u.style.top = (100-fY)+'%';
+        const uLab = document.createElement('div'); uLab.className = 'label'; 
+        uLab.innerText = "TÚ"; uLab.style.opacity = 1; u.appendChild(uLab);
+        layer.appendChild(u);
+
+        candidates.forEach(c => {
+            const d = document.createElement('div'); d.className = 'dot';
+            d.style.background = c.color; d.style.left = c.x+'%'; d.style.top = (100-c.y)+'%';
+            const l = document.createElement('div'); l.className = 'label'; l.innerText = c.name;
+            d.appendChild(l); layer.appendChild(d);
+        });
+
+        // --- RENDERIZAR DESGLOSE DE PUNTOS ---
+        const breakdownBox = document.getElementById('breakdown-box');
+        breakdownBox.innerHTML = '';
+        sortedForBreakdown.forEach(c => {
+            if(c.exactMatches > 0) { // Solo mostrar si tiene al menos 1 coincidencia
+                breakdownBox.innerHTML += `
+                    <div class="breakdown-item">
+                        <span style="font-weight:bold; color:${c.color}">${c.name}</span>
+                        <span class="breakdown-count">${c.exactMatches} coincidencias</span>
+                    </div>
+                `;
+            }
+        });
+
+        // --- RENDERIZAR TOP 3 ---
+        const list = document.getElementById('matches-box'); list.innerHTML = '';
+        sortedForTop3.slice(0, 3).forEach(c => {
+            list.innerHTML += `
+                <div class="candidate-card">
+                    <div class="match-badge">${c.match}%</div>
+                    <h2 style="margin:0; color:${c.color}">${c.name}</h2>
+                    <small style="font-weight:bold; color:#636e72;">${c.party}</small>
+                    <div class="section-title" style="color:#FBC02D;">📜 Trayectoria</div>
+                    <div class="box-trayectoria">${c.trayectoria}</div>
+                    <div class="section-title" style="color:#4CAF50;">📢 Promesa</div>
+                    <div class="box-promesa">${c.promesas}</div>
+                </div>`;
+        });
+                // --- RENDERIZAR TARJETAS DE COINCIDENCIAS (pregunta a pregunta) ---
+        const coincidencesBox = document.getElementById('coincidences-box');
+        coincidencesBox.innerHTML = '';
+
+        const candidatesWithCoincidences = sortedForBreakdown.filter(c => c.exactMatches > 0);
+
+        candidatesWithCoincidences.forEach(c => {
+            coincidencesBox.innerHTML += `
+                <div class="candidate-card">
+                    <div class="match-badge">${c.exactMatches} 🎯</div>
+                    <h2 style="margin:0; color:${c.color}">${c.name}</h2>
+                    <small style="font-weight:bold; color:#636e72;">${c.party}</small>
+                    <div class="section-title" style="color:#FBC02D;">📜 Trayectoria</div>
+                    <div class="box-trayectoria">${c.trayectoria}</div>
+                    <div class="section-title" style="color:#4CAF50;">📢 Promesa</div>
+                    <div class="box-promesa">${c.promesas}</div>
+                </div>
+            `;
+        });
+
+        if (candidatesWithCoincidences.length === 0) {
+            coincidencesBox.innerHTML = `
+                <div style="background:#f8f9fa; border:2px solid #eee; border-radius:16px; padding:16px; color:#666;">
+                    No hubo coincidencias claras pregunta a pregunta (esto puede pasar si tus respuestas quedan siempre entre varios candidatos).
+                </div>
+            `;
+        }
+
+
+
+
+    }
+
+    async function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const element = document.getElementById('printable-area');
+
+    // Forzar labels visibles en el chart
+    document.getElementById('chart').classList.add('printing-mode');
+    await new Promise(r => setTimeout(r, 250));
+
+    // Captura en alta resolución
+    const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollY: -window.scrollY
+    });
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    // Convertimos altura de página PDF (mm) a px para “rebanar” el canvas
+    const pageHeightPx = Math.floor(canvas.width * (pdfHeight / pdfWidth));
+
+    let y = 0;
+    let page = 0;
+
+    while (y < canvas.height) {
+        // Alto del slice (última página puede ser más pequeña)
+        const sliceHeight = Math.min(pageHeightPx, canvas.height - y);
+
+        // Canvas temporal para cada página
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceHeight;
+
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, y, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+        const imgData = pageCanvas.toDataURL('image/png');
+
+        // Alto en mm manteniendo proporción
+        const imgHeightMm = (sliceHeight * pdfWidth) / canvas.width;
+
+        if (page > 0) pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeightMm);
+
+        y += sliceHeight;
+        page++;
+    }
+
+    pdf.save('Votometro-2026-Resultados.pdf');
+
+    document.getElementById('chart').classList.remove('printing-mode');
+}
+
+</script>
+
+</body>
+</html>
